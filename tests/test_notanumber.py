@@ -1,7 +1,9 @@
 """Tests for notanumber."""
 
-import pytest
 import struct
+
+import pytest
+
 import notanumber as nn
 
 
@@ -139,7 +141,7 @@ class TestAutoDetection:
     def test_auto_detect_invalid_data(self):
         """Test auto-detection with invalid data."""
         # Create invalid fp16 pattern
-        invalid = struct.pack('<H', 0x1234)
+        invalid = struct.pack("<H", 0x1234)
         with pytest.raises(ValueError, match="doesn't look like anything"):
             nn.decode(invalid, "auto")
 
@@ -184,42 +186,42 @@ class TestDataIntegrity:
     def test_zero_corrupted(self):
         """Test detection of corrupted zero encoding."""
         # Create a non-zero value in what should be zeros
-        corrupted = struct.pack('<8H', 0x0001, 0, 0, 0, 0, 0, 0, 0)
+        corrupted = struct.pack("<8H", 0x0001, 0, 0, 0, 0, 0, 0, 0)
         with pytest.raises(ValueError, match="Impure zeros"):
             nn.decode(corrupted, "zero")
 
     def test_inf_corrupted_not_inf(self):
         """Test detection of non-infinity in infinity encoding."""
         # Create a finite value (1.0 in fp16)
-        corrupted = struct.pack('<8H', *[0x3C00] * 8)
+        corrupted = struct.pack("<8H", *[0x3C00] * 8)
         with pytest.raises(ValueError, match="Non-infinity"):
             nn.decode(corrupted, "inf")
 
     def test_inf_corrupted_nan(self):
         """Test detection of NaN in infinity encoding."""
         # Create NaN instead of infinity
-        corrupted = struct.pack('<8H', *[0x7E00] * 8)
+        corrupted = struct.pack("<8H", *[0x7E00] * 8)
         with pytest.raises(ValueError, match="NaN snuck"):
             nn.decode(corrupted, "inf")
 
     def test_nan_corrupted(self):
         """Test detection of non-NaN in NaN encoding."""
         # Create a regular number
-        corrupted = struct.pack('<H', 0x3C00)
+        corrupted = struct.pack("<H", 0x3C00)
         with pytest.raises(ValueError, match="pretending to be NaN"):
             nn.decode(corrupted, "nan")
 
     def test_subnormal_corrupted_normal(self):
         """Test detection of normal value in subnormal encoding."""
         # Create a normalized value
-        corrupted = struct.pack('<H', 0x3C00)
+        corrupted = struct.pack("<H", 0x3C00)
         with pytest.raises(ValueError, match="aren't subnormal"):
             nn.decode(corrupted, "subnormal")
 
     def test_subnormal_corrupted_negative(self):
         """Test detection of negative subnormal."""
         # Create negative subnormal
-        corrupted = struct.pack('<H', 0x8001)
+        corrupted = struct.pack("<H", 0x8001)
         with pytest.raises(ValueError, match="Wrong kind of small"):
             nn.decode(corrupted, "subnormal")
 
@@ -269,14 +271,14 @@ class TestCorruptedHeaders:
     def test_nan_corrupted_header(self):
         """Test corrupted length header in NaN encoding."""
         # Create a NaN array with invalid length
-        corrupted = struct.pack('<10H', *[0x7E00 | 0xFF] * 10)
+        corrupted = struct.pack("<10H", *[0x7E00 | 0xFF] * 10)
         with pytest.raises(ValueError, match="Corrupted length header"):
             nn.from_nan(corrupted)
 
     def test_subnormal_corrupted_header(self):
         """Test corrupted length header in subnormal encoding."""
         # Create a subnormal array with invalid length
-        corrupted = struct.pack('<10H', *[0x01FF] * 10)
+        corrupted = struct.pack("<10H", *[0x01FF] * 10)
         with pytest.raises(ValueError, match="Corrupted length header"):
             nn.from_subnormal(corrupted)
 
@@ -291,18 +293,17 @@ class TestSubnormalEdgeCases:
         encoded = nn.to_subnormal(data)
 
         # Check first value is zero
-        first_val = struct.unpack('<H', encoded[4:6])[0]  # Skip length header
+        first_val = struct.unpack("<H", encoded[4:6])[0]  # Skip length header
         assert first_val == 0  # Should be zero, not subnormal
 
     def test_subnormal_max_mantissa(self):
         """Test subnormal with maximum mantissa value."""
         # Create data that will produce mantissa 1023 (0x3FF)
-        data = struct.pack('<I', 1) + b'\xFF\x03'  # Length 1, then 0x3FF in first 10 bits
-        encoded = nn.to_subnormal(b'\xFF\x03')
+        encoded = nn.to_subnormal(b"\xff\x03")
 
         # Verify it encodes without overflow
         decoded = nn.from_subnormal(encoded)
-        assert decoded == b'\xFF\x03'
+        assert decoded == b"\xff\x03"
 
 
 if __name__ == "__main__":

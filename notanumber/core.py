@@ -16,7 +16,6 @@ There is no life I know to compare with pure imagination.
 import struct
 from typing import Literal
 
-
 # IEEE 754 fp16 bit patterns
 SIGN_BIT = 0x8000
 EXPONENT_MASK = 0x7C00

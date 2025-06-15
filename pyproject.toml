@@ -60,9 +60,9 @@ target-version = ['py312']
 
 [tool.ruff]
 line-length = 88
-target-python = "py312"
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]  # Line length handled by black
+target-version = "py312"
+lint.select = ["E", "F", "I", "N", "W", "UP"]
+lint.ignore = ["E501"]  # Line length handled by black
 
 [tool.mypy]
 python_version = "3.12"
